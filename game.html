@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed Gary</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Arial&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #AFE1AF;
+            font-family: Arial, sans-serif;
+        }
+
+        #gameTitle, #gameOver, #victory {
+            font-family: 'Abril Fatface', cursive;
+            font-size: 48px;
+            color: #097969;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        #subtext {
+            font-family: Arial, sans-serif;
+            color: #097969;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        #startButton, #retryButton {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #097969;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #gary {
+            position: absolute;
+            bottom: 10px;
+            width: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .emoji {
+            position: absolute;
+            font-size: 32px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameTitle">Feed Gary</div>
+    <button id="startButton">Start</button>
+    <canvas id="gameCanvas" width="window.innerWidth" height="window.innerHeight"></canvas>
+    <div id="gameOver" style="display:none;">Game Over</div>
+    <div id="subtext" style="display:none;">wtf. you killed gary. gary ded.</div>
+    <div id="victory" style="display:none;">yayy</div>
+    <div id="subtextVictory" style="display:none;">congrats. no jail time today- gary no hungy. he happy. you good</div>
+    <button id="retryButton" style="display:none;">Try again?</button>
+    <img src="gary.png" id="gary">
+
+    <audio id="bgm" src="bgm.mp3" loop></audio>
+    <audio id="munch" src="munch.mp3"></audio>
+    <audio id="fail" src="fail.mp3"></audio>
+    <audio id="yay" src="yay.mp3"></audio>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const gary = document.getElementById('gary');
+        const bgm = document.getElementById('bgm');
+        const munch = document.getElementById('munch');
+        const fail = document.getElementById('fail');
+        const yay = document.getElementById('yay');
+        const retryButton = document.getElementById('retryButton');
+        const startButton = document.getElementById('startButton');
+
+        const goodItems = ["🦟","🐝","🪰","🐞","🐜","🦋","🍓","🍕","🍩","🧀","🍥","🍞","🍙","🥑","🥐","🫧"];
+        const badItems = ["🕌","🛺","🏎️","🍳","💰","🧼","🛁","🪑","🗑️","🥁","🐡","🦖","👠","🪨"];
+
+        let emojis = [];
+        let garyX = canvas.width / 2;
+        let garySpeed = 7;
+        let gameActive = false;
+        let loopCount = 0;
+        let maxLoops = 2;
+
+        function spawnEmoji() {
+            const isGood = Math.random() > 0.3;
+            const emoji = document.createElement('div');
+            emoji.classList.add('emoji');
+            emoji.textContent = isGood ? goodItems[Math.floor(Math.random() * goodItems.length)] : badItems[Math.floor(Math.random() * badItems.length)];
+            emoji.style.left = Math.random() * (window.innerWidth - 32) + 'px';
+            document.body.appendChild(emoji);
+
+            const speed = 1 + Math.random() * 1.5;
+            emojis.push({ element: emoji, y: 0, speed: speed });
+        }
+
+        function updateEmojis() {
+            for (let i = 0; i < emojis.length; i++) {
+                const obj = emojis[i];
+                obj.y += obj.speed;
+                obj.element.style.top = obj.y + 'px';
+
+                const garyRect = gary.getBoundingClientRect();
+                const emojiRect = obj.element.getBoundingClientRect();
+
+                if (
+                    emojiRect.bottom > garyRect.top &&
+                    emojiRect.left < garyRect.right &&
+                    emojiRect.right > garyRect.left &&
+                    emojiRect.top < garyRect.bottom
+                ) {
+                    const caught = obj.element.textContent;
+                    if (goodItems.includes(caught)) {
+                        munch.currentTime = 0;
+                        munch.play();
+                    } else {
+                        fail.play();
+                        endGame(false);
+                        return;
+                    }
+                    obj.element.remove();
+                    emojis.splice(i, 1);
+                    i--;
+                }
+
+                if (obj.y > window.innerHeight) {
+                    obj.element.remove();
+                    emojis.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        function endGame(victory) {
+            gameActive = false;
+            emojis.forEach(e => e.element.remove());
+            emojis = [];
+            if (victory) {
+                document.getElementById('victory').style.display = 'block';
+                document.getElementById('subtextVictory').style.display = 'block';
+                yay.play();
+            } else {
+                document.getElementById('gameOver').style.display = 'block';
+                document.getElementById('subtext').style.display = 'block';
+            }
+            retryButton.style.display = 'block';
+            bgm.pause();
+            bgm.currentTime = 0;
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+            updateEmojis();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            document.getElementById('gameTitle').style.display = 'none';
+            document.getElementById('victory').style.display = 'none';
+            document.getElementById('subtextVictory').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('subtext').style.display = 'none';
+            retryButton.style.display = 'none';
+            startButton.style.display = 'none';
+            gameActive = true;
+            loopCount = 0;
+            bgm.play();
+            gameLoop();
+            const interval = setInterval(() => {
+                if (!gameActive) return clearInterval(interval);
+                spawnEmoji();
+                if (++loopCount >= goodItems.length * maxLoops) {
+                    endGame(true);
+                    clearInterval(interval);
+                }
+            }, 700);
+        }
+
+        retryButton.onclick = () => location.reload();
+        startButton.onclick = startGame;
+
+        // Movement
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') garyX -= garySpeed;
+            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') garyX += garySpeed;
+            gary.style.left = `${garyX}px`;
+        });
+
+        let dragging = false;
+        gary.addEventListener('touchstart', () => dragging = true);
+        gary.addEventListener('touchend', () => dragging = false);
+        gary.addEventListener('touchmove', (e) => {
+            if (!dragging) return;
+            const touch = e.touches[0];
+            garyX = touch.clientX;
+            gary.style.left = `${garyX}px`;
+        });
+    </script>
+</body>
+</html>
