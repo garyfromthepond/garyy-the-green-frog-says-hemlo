@@ -140,7 +140,7 @@
     canvas.height = window.innerHeight;
 
     const goodItems = ["🦟","🐝","🪰","🐞","🐜","🦋","🍓","🍕","🍩","🧀","🍥","🍞","🍙","🥑","🥐","🫧"];
-    const badItems = ["🕌","🛺","🏎","🍳","💰","🧼","🛁","🪑","🗑","🥁","🐡","🦖","👠","🪨"];
+    const badItems = ["🕌","🛺","🏎️","🍳","💰","🧼","🛁","🪑","🗑️","🥁","🐡","🦖","👠","🪨"];
 
     let emojis = [];
     let garyX = canvas.width / 2;
@@ -271,7 +271,7 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'a' || e.key === 'ArrowLeft') garyX -= garySpeed;
       if (e.key === 'd' || e.key === 'ArrowRight') garyX += garySpeed;
-      gary.style.left = ${garyX}px;
+      gary.style.left = `${garyX}px`;
     });
 
     let dragging = false;
@@ -281,7 +281,7 @@
       if (!dragging) return;
       const touch = e.touches[0];
       garyX = touch.clientX;
-      gary.style.left = ${garyX}px;
+      gary.style.left = `${garyX}px`;
     });
 
     window.addEventListener('resize', () => {
