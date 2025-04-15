@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Feed Gary</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap');
@@ -35,7 +35,7 @@
       text-align: center;
     }
 
-    #startButton, #retryButton {
+    #startButton, #retryButton, #homeButton {
       padding: 1vh 2vw;
       font-size: 2.5vh;
       background-color: #097969;
@@ -45,6 +45,13 @@
       cursor: pointer;
       margin: 2vh auto;
       z-index: 10;
+    }
+    
+    #buttonContainer {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     #gameCanvas {
@@ -56,8 +63,9 @@
     #gary {
       position: absolute;
       bottom: 2vh;
-      width: 8vw;
+      width: 15vw;
       max-width: 80px;
+      min-width: 50px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 5;
@@ -96,6 +104,85 @@
       font-size: 4vh;
       pointer-events: none;
     }
+
+    @media (max-width: 768px) {
+      #gameTitle {
+        font-size: 7vw;
+      }
+      
+      .title {
+        font-size: 8vw;
+      }
+      
+      .subtext {
+        font-size: 2.2vh;
+        width: 90%;
+      }
+      
+      .emoji {
+        font-size: 3.5vh;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      #gameTitle {
+        font-size: 8vw;
+      }
+      
+      #startButton, #retryButton, #homeButton {
+        padding: 1.2vh 3vw;
+      }
+      
+      .title {
+        font-size: 10vw;
+      }
+      
+      .subtext {
+        font-size: 2vh;
+        width: 95%;
+      }
+    }
+
+    .mobile-controls {
+      position: fixed;
+      bottom: 15vh;
+      width: 100%;
+      display: none;
+      justify-content: space-between;
+      padding: 0 10vw;
+      z-index: 10;
+    }
+
+    .control-button {
+      width: 60px;
+      height: 60px;
+      background-color: rgba(9, 121, 105, 0.6);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    @media (max-width: 768px) {
+      .mobile-controls {
+        display: flex;
+      }
+      
+      .control-button {
+        width: 50px;
+        height: 50px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .control-button {
+        width: 45px;
+        height: 45px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -108,7 +195,15 @@
     <div id="subtext" class="subtext" style="display: none;">wtf? you killed gary. gary ded. go to jail.</div>
     <div id="victory" class="title" style="display: none;">yayyy</div>
     <div id="subtextVictory" class="subtext" style="display: none;">congrats. gary heppi. you heppi. we all heppi.</div>
-    <button id="retryButton" style="display: none;">Try again?</button>
+    <div id="buttonContainer">
+      <button id="retryButton" style="display: none;">Try again?</button>
+      <button id="homeButton" style="display: none;">Go Home</button>
+    </div>
+  </div>
+
+  <div class="mobile-controls">
+    <button class="control-button" id="leftButton">←</button>
+    <button class="control-button" id="rightButton">→</button>
   </div>
 
   <img src="gary.png" id="gary">
@@ -135,6 +230,9 @@
     const subtext = document.getElementById('subtext');
     const subtextVictory = document.getElementById('subtextVictory');
     const title = document.getElementById('gameTitle');
+    const homeButton = document.getElementById('homeButton');
+    const leftButton = document.getElementById('leftButton');
+    const rightButton = document.getElementById('rightButton');
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -206,6 +304,16 @@
       }
     }
 
+    function moveGary(newX) {
+      // Keep Gary within screen bounds
+      if (newX < 0) newX = 0;
+      if (newX > window.innerWidth - gary.offsetWidth) 
+        newX = window.innerWidth - gary.offsetWidth;
+      
+      garyX = newX;
+      gary.style.left = `${garyX}px`;
+    }
+
     function endGame(victory) {
       gameActive = false;
       emojis.forEach(e => e.element.remove());
@@ -223,6 +331,7 @@
       }
 
       retryButton.style.display = 'block';
+      homeButton.style.display = 'block';
       bgm.pause();
       bgm.currentTime = 0;
     }
@@ -242,6 +351,7 @@
       subtext.style.display = 'none';
       subtextVictory.style.display = 'none';
       retryButton.style.display = 'none';
+      homeButton.style.display = 'none';
 
       gameActive = true;
       loopCount = 0;
@@ -268,25 +378,66 @@
       startGame();
     };
 
+    homeButton.onclick = () => window.location.href = 'index.html';
+
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'a' || e.key === 'ArrowLeft') garyX -= garySpeed;
-      if (e.key === 'd' || e.key === 'ArrowRight') garyX += garySpeed;
-      gary.style.left = `${garyX}px`;
+      if (!gameActive) return;
+      if (e.key === 'a' || e.key === 'ArrowLeft') moveGary(garyX - garySpeed);
+      if (e.key === 'd' || e.key === 'ArrowRight') moveGary(garyX + garySpeed);
     });
 
+    // Mobile touch controls for Gary
     let dragging = false;
-    gary.addEventListener('touchstart', () => dragging = true);
-    gary.addEventListener('touchend', () => dragging = false);
-    gary.addEventListener('touchmove', (e) => {
-      if (!dragging) return;
+    gary.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      dragging = true;
+    });
+    
+    document.addEventListener('touchend', () => {
+      dragging = false;
+    });
+    
+    document.addEventListener('touchmove', (e) => {
+      if (!dragging || !gameActive) return;
+      e.preventDefault();
       const touch = e.touches[0];
-      garyX = touch.clientX;
-      gary.style.left = `${garyX}px`;
+      moveGary(touch.clientX - gary.offsetWidth / 2);
+    });
+
+    // Mobile button controls
+    let leftInterval, rightInterval;
+    
+    leftButton.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      clearInterval(leftInterval);
+      leftInterval = setInterval(() => {
+        if (gameActive) moveGary(garyX - garySpeed);
+      }, 30);
+    });
+    
+    leftButton.addEventListener('touchend', () => {
+      clearInterval(leftInterval);
+    });
+    
+    rightButton.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      clearInterval(rightInterval);
+      rightInterval = setInterval(() => {
+        if (gameActive) moveGary(garyX + garySpeed);
+      }, 30);
+    });
+    
+    rightButton.addEventListener('touchend', () => {
+      clearInterval(rightInterval);
     });
 
     window.addEventListener('resize', () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      
+      // Keep Gary within screen bounds after resize
+      if (garyX > window.innerWidth - gary.offsetWidth)
+        moveGary(window.innerWidth - gary.offsetWidth);
     });
   </script>
 </body>
